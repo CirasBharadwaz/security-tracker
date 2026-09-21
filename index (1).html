@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>12-Month Security Plan Tracker</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sec Plan">
+<meta name="theme-color" content="#2B55C9">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF0F4; --surface:#FFFFFF; --ink:#172033; --muted:#5B6576; --line:#D5DBE4;
+  --blue:#2B55C9; --done:#1E8657; --prog:#C27C0E; --not:#B8C0CD;
+  --done-bg:#E3F3EA; --prog-bg:#FBF0DC; --not-bg:#F1F3F6; --flash:#DCE6FF;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#10151F; --surface:#182030; --ink:#E6EAF1; --muted:#98A2B3; --line:#2A3446;
+    --blue:#8AA6FF; --done:#3CC486; --prog:#E8A93A; --not:#4A5568;
+    --done-bg:#16302A; --prog-bg:#33291A; --not-bg:#1F2736; --flash:#23315A;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10151F; --surface:#182030; --ink:#E6EAF1; --muted:#98A2B3; --line:#2A3446;
+  --blue:#8AA6FF; --done:#3CC486; --prog:#E8A93A; --not:#4A5568;
+  --done-bg:#16302A; --prog-bg:#33291A; --not-bg:#1F2736; --flash:#23315A;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:400 15px/1.55 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;}
+.wrap{max-width:1120px;margin:0 auto;padding:28px 20px 64px}
+h1,h2,h3{font-family:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif;margin:0;line-height:1.15}
+h1{font-size:clamp(26px,4.2vw,38px);font-weight:700;letter-spacing:-.01em}
+.sub{color:var(--muted);margin:6px 0 0;max-width:62ch}
+
+/* Header */
+.top{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:flex-end;justify-content:space-between}
+.start{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.start input{font:inherit;font-size:14px;color:var(--ink);background:var(--surface);
+  border:1px solid var(--line);border-radius:6px;padding:7px 9px}
+.sync{font-size:13px;color:var(--muted);min-height:1.4em}
+
+/* Year strip — the centrepiece */
+.year{margin:26px 0 8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 18px 14px}
+.yearhead{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+.yearhead h2{font-size:22px;font-weight:600}
+.legend{display:flex;gap:14px;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:10px;height:10px;border-radius:2px;display:inline-block}
+.strip{display:grid;grid-template-columns:repeat(11,4fr) 8fr;gap:8px;overflow-x:auto;padding-bottom:4px}
+.month{min-width:48px}
+.month .mlabel{font-size:12px;color:var(--muted);margin-bottom:5px;white-space:nowrap}
+.cells{display:flex;gap:3px}
+.cell{flex:1;height:38px;border:0;border-radius:3px;cursor:pointer;background:var(--not);padding:0;position:relative}
+.cell[data-s="progress"]{background:var(--prog)}
+.cell[data-s="done"]{background:var(--done)}
+.cell.now::after{content:"";position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);
+  width:0;height:0;border:4px solid transparent;border-bottom-color:var(--ink)}
+.cell:focus-visible,.chip:focus-visible,select:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.bar{display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--not-bg);margin-top:16px}
+.bar i{display:block;height:100%}
+.bar .b-done{background:var(--done)} .bar .b-prog{background:var(--prog)}
+.stats{display:flex;flex-wrap:wrap;gap:4px 22px;margin-top:10px;font-size:14px;color:var(--muted)}
+.stats b{color:var(--ink);font-weight:600}
+
+/* Layout below strip */
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;margin-top:22px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:1fr}.side{order:-1}}
+
+/* Controls */
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  border-radius:999px;padding:6px 12px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.controls select,.controls input[type=search]{font:inherit;font-size:14px;color:var(--ink);background:var(--surface);
+  border:1px solid var(--line);border-radius:6px;padding:7px 9px}
+.controls input[type=search]{flex:1;min-width:160px}
+
+/* Month sections */
+.msec{margin-bottom:26px}
+.mhead{display:flex;gap:12px;align-items:baseline;justify-content:space-between;
+  border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:10px}
+.mhead h3{font-size:19px;font-weight:600}
+.mhead .mcount{font-size:13px;color:var(--muted);white-space:nowrap}
+.week{display:grid;grid-template-columns:56px minmax(0,1fr) 168px;gap:14px;align-items:start;
+  background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--not);
+  border-radius:6px;padding:14px 16px;margin-bottom:8px;transition:background .6s}
+.week[data-s="progress"]{border-left-color:var(--prog)}
+.week[data-s="done"]{border-left-color:var(--done)}
+.week.flash{background:var(--flash)}
+.wno{font-family:"IBM Plex Sans Condensed",sans-serif;font-weight:700;font-size:24px;line-height:1;color:var(--muted)}
+.wno small{display:block;font-family:"IBM Plex Sans",sans-serif;font-size:11px;font-weight:500;margin-top:4px}
+.week.is-now .wno{color:var(--blue)}
+.wtitle{font-weight:600;font-size:16px;margin:0 0 4px}
+.wtopics{margin:0;color:var(--ink);font-size:14px}
+.wout{margin:8px 0 0;font-size:13.5px;color:var(--muted)}
+.wout strong{color:var(--ink);font-weight:600}
+.badge{display:inline-block;font-size:12px;font-weight:600;border-radius:4px;padding:1px 7px;margin-left:6px;
+  background:var(--flash);color:var(--blue);vertical-align:2px}
+.status{width:100%;font:inherit;font-size:14px;font-weight:500;border-radius:6px;padding:8px 10px;cursor:pointer;
+  border:1px solid var(--line);background:var(--not-bg);color:var(--ink)}
+.status[data-s="progress"]{background:var(--prog-bg);border-color:var(--prog)}
+.status[data-s="done"]{background:var(--done-bg);border-color:var(--done)}
+.status:disabled{cursor:default;opacity:.75}
+@media (max-width:640px){
+  .week{grid-template-columns:44px minmax(0,1fr)}
+  .week .wsel{grid-column:1 / -1}
+  .wno{font-size:20px}
+}
+.cont{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--blue);border-radius:10px;padding:18px;margin-bottom:22px}
+.cont .ctop{display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:space-between;align-items:baseline}
+.cont h2{font-size:22px;font-weight:600;margin:2px 0 4px}
+.cont .kick{font-size:13px;color:var(--muted);margin:0}
+.cbar{height:6px;border-radius:3px;background:var(--not-bg);overflow:hidden;margin:12px 0 4px}.cbar i{display:block;height:100%;background:var(--done);transition:width .3s}
+.subs{list-style:none;margin:8px 0 0;padding:0;columns:2 260px;column-gap:24px}
+.subs li{break-inside:avoid;padding:5px 0}
+.subs label{display:flex;gap:9px;align-items:flex-start;cursor:pointer;font-size:14px}
+.subs input{margin-top:3px;accent-color:var(--done)}
+.subs input:checked + span{color:var(--muted);text-decoration:line-through}
+.cact{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+.btn{font:inherit;font-size:14px;font-weight:600;border:0;border-radius:6px;padding:9px 14px;background:var(--done);color:#fff;cursor:pointer}
+.toast{background:var(--done-bg);color:var(--ink);border:1px solid var(--done);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:14px}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:8px;padding:22px;color:var(--muted)}
+
+/* Side panel */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+.panel h3{font-size:17px;font-weight:600;margin-bottom:10px}
+.ms{list-style:none;margin:0;padding:0}
+.ms li{display:grid;grid-template-columns:22px 1fr;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:14px}
+.ms li:first-child{border-top:0}
+.ms .tick{width:16px;height:16px;border-radius:50%;border:2px solid var(--not);margin-top:3px}
+.ms li[data-s="progress"] .tick{border-color:var(--prog);background:linear-gradient(90deg,var(--prog) 50%,transparent 50%)}
+.ms li[data-s="done"] .tick{border-color:var(--done);background:var(--done)}
+.ms .wk{color:var(--muted);font-size:12.5px}
+.next{font-size:14px;margin:0}
+.next b{font-weight:600}
+.mini{margin:10px 0 0;padding:0;list-style:none;font-size:13px;color:var(--muted)}
+.mini li{display:flex;justify-content:space-between;padding:3px 0}
+.reset{font:inherit;font-size:13px;background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;padding:0}
+@media (prefers-reduced-motion: reduce){.week{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>12-Month Security Plan Tracker</h1>
+      <p class="sub">52 weeks from foundations to a security job in Germany. Mark each week as you go; your progress is saved automatically.</p>
+    </div>
+    <div>
+      <label class="start">Plan start date
+        <input type="date" id="startDate">
+      </label>
+      <div class="sync" id="sync" aria-live="polite"></div>
+    </div>
+  </header>
+
+  <section class="year" aria-labelledby="yearTitle">
+    <div class="yearhead">
+      <h2 id="yearTitle">Your year at a glance</h2>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--done)"></i>Completed</span>
+        <span><i class="dot" style="background:var(--prog)"></i>In progress</span>
+        <span><i class="dot" style="background:var(--not)"></i>Not completed</span>
+      </div>
+    </div>
+    <div class="strip" id="strip"></div>
+    <div class="bar" id="bar" aria-hidden="true"><i class="b-done"></i><i class="b-prog"></i></div>
+    <div class="stats" id="stats"></div>
+  </section>
+
+  <div class="grid">
+    <main>
+      <div id="toast" class="toast" role="status" hidden></div>
+      <section class="cont" id="cont" aria-labelledby="contTitle"></section>
+      <div class="controls">
+        <div class="chips" role="group" aria-label="Filter by status" id="chips">
+          <button class="chip" data-f="all" aria-pressed="true">All weeks</button>
+          <button class="chip" data-f="not" aria-pressed="false">Not completed</button>
+          <button class="chip" data-f="progress" aria-pressed="false">In progress</button>
+          <button class="chip" data-f="done" aria-pressed="false">Completed</button>
+        </div>
+        <select id="monthFilter" aria-label="Filter by month"><option value="all">All months</option></select>
+        <input type="search" id="search" placeholder="Search topics, e.g. Kerberos" aria-label="Search topics">
+      </div>
+      <div id="list"></div>
+    </main>
+
+    <aside class="side">
+      <div class="panel">
+        <h3>After this week</h3>
+        <p class="next" id="next"></p>
+        <ul class="mini" id="phaseMini"></ul>
+      </div>
+      <div class="panel">
+        <h3>Milestones</h3>
+        <ul class="ms" id="milestones"></ul>
+      </div>
+      <div class="panel">
+        <button class="reset" id="reset">Reset all weeks to not completed</button>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const MONTHS = [
+  [1,"Network security"],[2,"Linux, Windows and Active Directory"],[3,"Security fundamentals and Security+"],
+  [4,"Log engineering and SIEM"],[5,"Detection engineering"],[6,"EDR/XDR and incident response"],
+  [7,"Cloud security"],[8,"IAM, PAM and Zero Trust"],[9,"Vulnerability management and security testing"],
+  [10,"ISMS: ISO 27001 and BSI IT-Grundschutz"],[11,"Regulation and AI security"],[12,"Capstone and job campaign"]
+];
+// [week, month, title, topics, output, milestone label or ""]
+const WEEKS = [
+[1,1,"Networking foundations","OSI and TCP/IP models, encapsulation; IPv4 addressing, subnetting and CIDR, IPv6 basics; MAC addresses and ARP; TCP vs UDP, three-way handshake, TCP flags, well-known ports","Lab VMs installed; 30 subnetting drills; German CV, LinkedIn, Xing live; 10 applications sent. Bash: navigation, variables","CV live + first applications"],
+[2,1,"Core protocols","DNS (record types, recursion, caching, DNSSEC idea); DHCP (DORA); HTTP/HTTPS, SMTP, SSH, SMB, FTP, NTP, SNMP; TLS 1.2 vs 1.3 handshake, certificates and trust chains","Annotated packet capture for each protocol. Bash: loops, conditionals",""],
+[3,1,"Network infrastructure and defence","Switching, VLANs, trunking; static routing and routing protocol concepts; NAT/PAT; firewalls (stateless, stateful, NGFW, rule order, default deny); DMZ and segmentation; forward and reverse proxies; VPN (IPsec, TLS VPN); IDS vs IPS, signature vs anomaly detection","Firewall VM with three zones (LAN, DMZ, WAN) and documented rule set. Bash: grep, awk, sed",""],
+[4,1,"Packet analysis and network attacks","tcpdump capture filters, Wireshark display filters, stream following; reading IDS rules and alerts; attacks: port scanning types, ARP spoofing, DNS spoofing, MITM, brute force, DoS basics","Project 1 complete. Bash script that summarises top talkers and denied connections","Project 1: Segmented network"],
+[5,2,"Linux administration and hardening","Filesystem hierarchy; permissions (rwx, SUID, SGID, sticky bit); users, groups, sudoers; processes and systemd; package management; cron; ip and ss; logs (journald, auth.log, syslog); auditd; SSH hardening; CIS benchmark basics","Hardened Linux server with before/after checklist. Bash: user and sudo audit script",""],
+[6,2,"Windows internals and logging","Processes, services, registry hives, scheduled tasks, NTFS permissions, UAC; audit policy; event IDs 4624, 4625, 4648, 4672, 4688, 4697, 4698, 4720, 4728, 4732, 1102, 7045; Sysmon events 1, 3, 7, 10, 11, 13, 22; PowerShell logging (4103, 4104)","Windows endpoint with Sysmon and advanced audit policy. PowerShell: cmdlets, pipeline, objects",""],
+[7,2,"Active Directory","Domains, trees, forests, OUs; group scopes; GPO processing order; DNS in AD; Kerberos flow (AS-REQ, TGT, TGS); NTLM; LDAP; service accounts and delegation; attacks: password spraying, Kerberoasting, AS-REP roasting, pass-the-hash, pass-the-ticket, DCSync, golden ticket and the events each leaves","Domain controller + 2 clients, OU design, 5 GPOs. PowerShell: AD module queries",""],
+[8,2,"AD hardening","Tiering model introduction; LAPS; password and lockout policy; SMB signing; disabling LLMNR, NBT-NS and NTLMv1; Protected Users group; separate admin accounts; auditing privileged groups","Project 2 complete. PowerShell scripts: stale accounts, privileged groups, failed logons. German A1 exam","Project 2 + German A1"],
+[9,3,"Threats, attacks, vulnerabilities","Threat actors and motives; attack vectors; malware (ransomware, trojans, worms, RATs, rootkits, fileless); social engineering (phishing, vishing, BEC); application attacks (SQL injection, XSS, CSRF, buffer overflow concept); password attacks; indicators of compromise","One-page attack cheat sheet. Python: types, control flow",""],
+[10,3,"Cryptography and identity protocols","AES, RSA, ECC; SHA-2, salting, HMAC; digital signatures; PKI (CA, CRL, OCSP); Diffie-Hellman; MFA factors; OAuth 2.0 flows, OIDC, SAML, SSO; FIDO2 and passkeys","Flow diagrams for OAuth code flow and SAML login. Python: functions, file handling",""],
+[11,3,"Architecture, operations, governance","Defence in depth; zero trust introduction; backups (3-2-1), HA, DR, RTO/RPO; hardening, EDR, DLP; email security (SPF, DKIM, DMARC); policies and risk terms; frameworks (NIST CSF, ISO 27001, CIS Controls); privacy basics","Framework comparison table. Python: lists, dictionaries, CSV parsing",""],
+[12,3,"Security+ exam week","Four timed practice exams; performance-based question practice; weakest-domain review","Security+ passed. Python script that flags failed SSH logins from auth.log","Security+"],
+[13,4,"Logging foundations","Log sources (endpoint, network, identity, cloud, application); formats (syslog, CEF, JSON, EVTX); agents vs agentless, forwarders; normalisation and common schemas; timestamps, time zones, NTP; retention; log quality; data minimisation under GDPR","Log-source inventory for your lab. Python: regular expressions",""],
+[14,4,"SIEM architecture and SPL","Ingestion, indexing, parsing, correlation, alerting, dashboards; SPL: search, stats, eval, rex, table, timechart, lookups, transaction","Windows, Linux and firewall logs in Splunk; 10 saved searches",""],
+[15,4,"KQL and Microsoft Sentinel","Workspace and data connectors; tables (SecurityEvent, SigninLogs, DeviceProcessEvents); KQL: where, project, extend, summarize, join, let, parse, bin, render; workbooks; ingestion cost basics","Sentinel workspace with lab logs; the same 10 searches in KQL. Python: querying a log API",""],
+[16,4,"Alert triage and SOC process","Triage workflow; severity vs priority; true, false and benign positives; enrichment (reputation, WHOIS, geolocation); ITIL incident and escalation basics; SOC tiers, shift handover; alert fatigue","Triage runbook; 5 simulated alerts triaged as tickets. Python: IP enrichment script",""],
+[17,5,"Threat frameworks","MITRE ATT&CK tactics, techniques, sub-techniques, procedures, data sources; coverage mapping; Pyramid of Pain; Cyber Kill Chain; Diamond Model","ATT&CK coverage heatmap for your lab",""],
+[18,5,"Writing detections","Detection types (signature, threshold, anomaly, sequence); analytics rules (schedule, lookback, entity mapping, grouping); detections for brute force, password spraying, new admin accounts, suspicious PowerShell, living-off-the-land binaries, persistence","8 detections in KQL and SPL",""],
+[19,5,"Sigma and detection-as-code","Sigma rule structure and conversion to KQL/SPL; Git branches and pull requests; versioning; testing with attack simulation; CI validation concept; detection documentation template","Repo of Sigma rules with converted queries. Python: YAML rule validator",""],
+[20,5,"Threat intelligence and tuning","IOCs vs TTPs; strategic, operational, tactical intel; STIX/TAXII; feed integration; allowlists, baselining, measuring false-positive reduction","Project 3 complete (15 detections). German A2 exam","Project 3 + German A2"],
+[21,6,"Endpoint detection","EDR architecture and telemetry; XDR concept; Defender for Endpoint (inventory, alerts, incidents, advanced hunting, live response, isolation); process trees and parent-child anomalies; persistence and lateral movement indicators","3 simulated endpoint alerts investigated",""],
+[22,6,"Incident response process","NIST SP 800-61 lifecycle; preparation; detection and analysis; containment strategies; eradication and recovery; lessons learned; severity matrix; stakeholder communication; chain of custody; NIS2 reporting stages (24 h, 72 h, 1 month)","IR plan for a fictional company + phishing and ransomware playbooks",""],
+[23,6,"Forensics and SOAR basics","Order of volatility; memory acquisition and analysis basics; disk triage and timelines; Windows artefacts (prefetch, amcache, shimcache, event logs, browser history); SOAR concepts (enrichment, auto-containment, case management)","Forensic triage report. Python: alert-to-ticket automation",""],
+[24,6,"SC-200 exam week","SC-200 scope (Defender XDR, Sentinel, Defender for Cloud); practice tests; weak-area review","SC-200 passed. 3 incident reports in SOC-ticket format","SC-200"],
+[25,7,"Cloud fundamentals","IaaS, PaaS, SaaS; shared responsibility; Azure hierarchy (tenant, management groups, subscriptions, resource groups); Azure RBAC; Azure Policy; regions, data residency, GDPR and sovereign cloud","Governed Azure structure with 5 policies. Azure CLI and PowerShell basics",""],
+[26,7,"Cloud network and data security","VNets, subnets, network security groups, cloud firewall, private endpoints, bastion access; Key Vault; encryption at rest and in transit; storage security (public access, SAS tokens); WAF and DDoS protection","Secured two-tier application network with diagram",""],
+[27,7,"Cloud posture and monitoring","Defender for Cloud (secure score, recommendations, CSPM, workload protection); activity and diagnostic logs; cloud connectors in Sentinel; cloud attack paths (exposed storage, leaked keys, over-privileged identities); AWS IAM, CloudTrail, GuardDuty, Security Hub","Misconfiguration findings report with fixes",""],
+[28,7,"IaC and container security","Infrastructure as Code (Terraform, Bicep); state files and secrets; IaC scanning; container images and registries; Kubernetes security basics (RBAC, network policies, pod security); CI/CD pipeline security; secrets management","Lab redeployed through IaC, scanned and fixed",""],
+[29,8,"Identity and Entra ID","Joiner-mover-leaver lifecycle; Entra ID users, groups, roles; hybrid identity (sync, password hash sync, pass-through, federation); app registrations, enterprise apps, service principals, managed identities; user consent","Hybrid identity diagram; tenant configured",""],
+[30,8,"Access control","Conditional Access (signals, conditions, grant controls, report-only); MFA method strength; passwordless; risk-based policies; PIM (eligible vs active, approval, just-in-time); access reviews; least privilege; RBAC vs ABAC","Conditional Access baseline: block legacy auth, MFA for admins, risk-based sign-in",""],
+[31,8,"PAM and Zero Trust","PAM concepts (vaulting, session recording, credential rotation, JIT); privileged access workstations; tiering and enterprise access model; break-glass accounts; Zero Trust pillars; NIST SP 800-207","PAM/PAW design document",""],
+[32,8,"Identity attacks and detection","Token theft; adversary-in-the-middle phishing; MFA fatigue; consent phishing; cloud password spraying; impossible travel; OAuth app abuse; sign-in log investigation","Project 4 complete. 5 identity detections","Project 4: Secure Azure + identity"],
+[33,9,"Vulnerability management programme","Asset inventory; vulnerability lifecycle; authenticated, unauthenticated and agent scanning; CVE, CWE; CVSS 3.1 and 4.0; EPSS; known-exploited lists; prioritisation and SLAs; exceptions and risk acceptance; patching in hybrid Windows/Linux","Full authenticated scan of your lab",""],
+[34,9,"Web application security","HTTP deep dive; sessions and cookies; OWASP Top 10 (broken access control, cryptographic failures, injection, insecure design, misconfiguration, vulnerable components, authentication failures, integrity failures, logging failures, SSRF); OWASP API Top 10 intro; security headers","Findings from testing a deliberately vulnerable web app",""],
+[35,9,"Penetration testing methodology","Scoping and rules of engagement; German legal limits (§202a–c StGB); reconnaissance and enumeration; exploitation and privilege escalation concepts; post-exploitation; report structure","Pentest-style report on your lab",""],
+[36,9,"Integration week","Combine scan, web test, remediation and retest; revise Months 7–9","Project 5 complete","Project 5: Vulnerability assessment"],
+[37,10,"ISO 27001 clauses 4–10","Context and interested parties; scope; leadership and policy; roles; planning and objectives; competence, awareness, documented information; operation; monitoring, internal audit, management review; improvement; PDCA; 2022 changes","ISMS scope statement and security policy for a fictional company",""],
+[38,10,"Risk management and Annex A","Asset inventory; asset → threat → vulnerability chain; likelihood and impact; risk matrix; treatment options; risk owners; residual risk; the 93 Annex A controls in four themes; ISO 27002 guidance; Statement of Applicability","Risk register (20 risks) + Statement of Applicability",""],
+[39,10,"BSI IT-Grundschutz","BSI standards 200-1, 200-2, 200-3, 200-4; the Kompendium and its Bausteine; Strukturanalyse, Schutzbedarfsfeststellung, Modellierung, IT-Grundschutz-Check; ISO 27001 on a Grundschutz basis","Schutzbedarfsfeststellung; German–English glossary of 50 terms",""],
+[40,10,"Audit and exam","Internal audit process; evidence; nonconformities and corrective action; certification audit stages 1 and 2","ISO 27001 Foundation passed. Internal audit checklist","ISO 27001 Foundation"],
+[41,11,"NIS2 and NIS2UmsuCG","Scope (essential vs important entities, sectors, size thresholds); BSI registration; minimum risk-management measures; incident reporting (24 h, 72 h, 1 month); management liability and training; supply-chain security; sanctions","NIS2 applicability checklist",""],
+[42,11,"Sector rules and privacy","DORA (ICT risk, incident reporting, resilience testing, third-party risk); BAIT; KRITIS; TISAX assessment levels; GDPR principles, lawful bases, data subject rights, DPIA, Art. 32 security, Art. 33/34 breach notification; TOMs","Regulation map: sector → law → required controls",""],
+[43,11,"AI security and governance","EU AI Act risk classes and timeline; ISO/IEC 42001; OWASP Top 10 for LLM applications (prompt injection, sensitive data disclosure, supply chain, excessive agency); data leakage; validating AI output in SOC work","AI-use policy for a SOC + threat model of an LLM assistant",""],
+[44,11,"Gap assessment and German exam","Gap-analysis method; maturity scale; evidence collection; prioritised roadmap; executive summary writing","NIS2 gap assessment report. German B1 exam","NIS2 gap assessment + German B1"],
+[45,12,"Capstone design","Hybrid company scenario (on-prem AD, Azure, web app); attack chain mapped to ATT&CK: phishing → token theft → privilege escalation → lateral movement → exfiltration; telemetry and detection plan","Capstone design document",""],
+[46,12,"Capstone execution","Run the attack chain; confirm detections fire; investigate end to end; build the timeline","Evidence and timeline",""],
+[47,12,"Capstone reporting","Incident report; executive brief; simulated NIS2 early warning and notification; ISMS lessons learned (risk register and control updates)","Project 6 complete","Project 6: Capstone"],
+[48,12,"Portfolio and CV","Two CVs (SOC/engineer and ISMS/GRC); German Lebenslauf; portfolio README; one-page summary per project; LinkedIn featured section","Application pack ready",""],
+[49,12,"Technical interview prep","Networking, Windows/AD, Linux questions; live KQL/SPL queries; IR walk-through; cloud and IAM scenarios; ISMS questions; 6 STAR stories","Question bank with your answers",""],
+[50,12,"German and behavioural prep","Self-introduction in German; why security, why Germany; salary expectations and Blue Card threshold; questions to ask interviewers","Recorded mock answers",""],
+[51,12,"Campaign, part 1","20 targeted applications; follow-ups; referral requests; mock interviews","Active interview pipeline",""],
+[52,12,"Campaign, part 2","20 targeted applications; follow-ups; conversion talk if you are a Werkstudent; optional start on AZ-500 or ISO 27001 Lead Implementer","Interview pipeline + next certificate chosen","Year complete"]
+];
+const LABEL = {not:"Not completed", progress:"In progress", done:"Completed"};
+const STORE_KEY = "secplan-tracker-v1";
+
+let state = {statuses:{}, start:"", subs:{}};
+let filter = "all", monthF = "all", query = "";
+let db = null, ref = null, dirty = false, writing = false, saveTimer = null, readOnly = false;
+
+const $ = id => document.getElementById(id);
+const st = w => state.statuses[w] || "not";
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function currentWeek(){
+  if(!state.start) return null;
+  const s = new Date(state.start + "T00:00:00");
+  if(isNaN(s)) return null;
+  const d = Math.floor((Date.now() - s.getTime()) / 86400000);
+  if(d < 0) return 0;
+  return Math.min(52, Math.floor(d / 7) + 1);
+}
+
+function activeWeek(){ for(let w=1; w<=52; w++) if(st(w)!=="done") return w; return 0; }
+const subList = w => WEEKS[w-1][3].split(/;\s*/).map(x => x.trim()).filter(Boolean);
+let toastTimer;
+function showToast(msg){ const t=$("toast"); t.textContent=msg; t.hidden=false; clearTimeout(toastTimer); toastTimer=setTimeout(()=>{t.hidden=true;},5000); }
+
+function renderCont(){
+  const a = activeWeek(), el = $("cont");
+  if(!a){ el.innerHTML = `<p class="kick">Continue learning</p><h2 id="contTitle">All 52 weeks completed</h2><p class="kick">Your plan is finished. Keep the job campaign going.</p>`; return; }
+  const w = WEEKS[a-1], list = subList(a), done = state.subs[a] || {};
+  const n = list.filter((_,i)=>done[i]).length;
+  el.innerHTML = `<div class="ctop"><div><p class="kick">Continue learning · Month ${w[1]}</p><h2 id="contTitle">Week ${a}: ${esc(w[2])}</h2></div><span class="kick">${n} of ${list.length} subtopics</span></div>
+    <div class="cbar"><i style="width:${n/list.length*100}%"></i></div>
+    <ul class="subs">${list.map((x,i)=>`<li><label><input type="checkbox" data-sub="${i}"${done[i]?" checked":""}${readOnly?" disabled":""}><span>${esc(x)}</span></label></li>`).join("")}</ul>
+    <p class="wout" style="margin-top:12px"><strong>Output:</strong> ${esc(w[4])}</p>
+    <div class="cact"><button class="btn" id="finishWeek"${readOnly?" disabled":""}>Mark week complete</button><span class="kick">Completing a week moves you to the next one.</span></div>`;
+}
+
+function setStatus(w, v){
+  const before = activeWeek();
+  if(v === "not") delete state.statuses[w]; else state.statuses[w] = v;
+  const after = activeWeek();
+  if(after !== before){
+    if(v === "done" && after > before) showToast(after ? `Week ${w} completed. Moving to week ${after}: ${WEEKS[after-1][2]}` : "All 52 weeks completed");
+    else if(!after) showToast("All 52 weeks completed");
+    renderAll();
+    if(v === "done") $("cont").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block:"start"});
+  } else { refreshAfterChange(w); renderCont(); }
+  scheduleSave();
+}
+
+/* ---------- rendering ---------- */
+function renderStrip(){
+  const now = activeWeek();
+  $("strip").innerHTML = MONTHS.map(([m,name]) => {
+    const ws = WEEKS.filter(w => w[1] === m);
+    return `<div class="month"><div class="mlabel" title="${esc(name)}">Month ${m}</div><div class="cells">${
+      ws.map(w => `<button class="cell${now===w[0]?" now":""}" data-w="${w[0]}" data-s="${st(w[0])}" aria-label="Week ${w[0]}: ${esc(w[2])}, ${LABEL[st(w[0])]}" title="Week ${w[0]}: ${esc(w[2])}"></button>`).join("")
+    }</div></div>`;
+  }).join("");
+}
+
+function renderStats(){
+  let d=0,p=0; WEEKS.forEach(w => { const s=st(w[0]); if(s==="done")d++; else if(s==="progress")p++; });
+  const n = 52 - d - p, pct = Math.round(d/52*100);
+  const bar = $("bar").children; bar[0].style.width = (d/52*100)+"%"; bar[1].style.width = (p/52*100)+"%";
+  const now = currentWeek();
+  let pace = "";
+  if(now && now > 0){
+    const diff = d - (now - 1);
+    pace = diff === 0 ? `<span>On schedule (calendar week ${now})</span>` : diff > 0 ? `<span><b>${diff}</b> week${diff>1?"s":""} ahead of calendar week ${now}</span>` : `<span><b>${-diff}</b> week${diff<-1?"s":""} behind calendar week ${now}</span>`;
+  }
+  $("stats").innerHTML = `<span><b>${d}</b> of 52 completed (${pct}%)</span><span><b>${p}</b> in progress</span><span><b>${n}</b> not completed</span>${pace}`;
+}
+
+function renderSide(){
+  const a0 = activeWeek(); const nxt = a0 ? WEEKS.find(w => w[0] > a0 && st(w[0]) !== "done") : null;
+  $("next").innerHTML = nxt
+    ? `Week ${nxt[0]}: <b>${esc(nxt[2])}</b><br><span style="color:var(--muted)">${esc(nxt[4])}</span>`
+    : (a0 ? "This is the last week of the plan." : "All 52 weeks are completed.");
+  $("milestones").innerHTML = WEEKS.filter(w => w[5]).map(w =>
+    `<li data-s="${st(w[0])}"><span class="tick" aria-hidden="true"></span><span>${esc(w[5])}<br><span class="wk">Week ${w[0]} · ${LABEL[st(w[0])]}</span></span></li>`
+  ).join("");
+  const phases = [["Foundations",1,12],["SOC core",13,24],["Breadth",25,36],["Governance and campaign",37,52]];
+  $("phaseMini").innerHTML = phases.map(([n,a,b]) => {
+    const tot=b-a+1, dn=WEEKS.filter(w=>w[0]>=a&&w[0]<=b&&st(w[0])==="done").length;
+    return `<li><span>${n}</span><span>${dn}/${tot}</span></li>`;
+  }).join("");
+}
+
+function matches(w){
+  if(filter !== "all" && st(w[0]) !== filter) return false;
+  if(monthF !== "all" && String(w[1]) !== monthF) return false;
+  if(query){ const q = query.toLowerCase(); if(!(w[2]+" "+w[3]+" "+w[4]).toLowerCase().includes(q)) return false; }
+  return true;
+}
+
+function weekHTML(w){
+  const s = st(w[0]), now = activeWeek();
+  return `<article class="week${now===w[0]?" is-now":""}" id="wk${w[0]}" data-s="${s}">
+    <div class="wno">${w[0]}<small>${now===w[0]?"Current":"Week"}</small></div>
+    <div>
+      <h4 class="wtitle">${esc(w[2])}${w[5]?`<span class="badge">${esc(w[5])}</span>`:""}</h4>
+      <p class="wtopics">${esc(w[3])}</p>
+      <p class="wout"><strong>Output:</strong> ${esc(w[4])}</p>
+    </div>
+    <div class="wsel">
+      <select class="status" data-w="${w[0]}" data-s="${s}" aria-label="Status for week ${w[0]}"${readOnly?" disabled":""}>
+        <option value="not"${s==="not"?" selected":""}>Not completed</option>
+        <option value="progress"${s==="progress"?" selected":""}>In progress</option>
+        <option value="done"${s==="done"?" selected":""}>Completed</option>
+      </select>
+    </div>
+  </article>`;
+}
+
+function renderList(){
+  let html = "";
+  MONTHS.forEach(([m,name]) => {
+    const all = WEEKS.filter(w => w[1] === m), shown = all.filter(matches);
+    if(!shown.length) return;
+    const dn = all.filter(w => st(w[0])==="done").length;
+    html += `<section class="msec"><div class="mhead"><h3>Month ${m}: ${esc(name)}</h3><span class="mcount" data-m="${m}">${dn} of ${all.length} completed</span></div>${shown.map(weekHTML).join("")}</section>`;
+  });
+  $("list").innerHTML = html || `<div class="empty">No weeks match these filters. Choose "All weeks" or clear the search to see the full plan.</div>`;
+}
+
+function renderAll(){ $("startDate").value = state.start || ""; renderCont(); renderStrip(); renderStats(); renderSide(); renderList(); }
+
+function refreshAfterChange(w){
+  const s = st(w);
+  const row = $("wk"+w);
+  if(row){ row.dataset.s = s; const sel = row.querySelector("select"); sel.dataset.s = s; sel.value = s; }
+  const cell = document.querySelector(`.cell[data-w="${w}"]`);
+  if(cell){ cell.dataset.s = s; const wk = WEEKS[w-1]; cell.setAttribute("aria-label", `Week ${w}: ${wk[2]}, ${LABEL[s]}`); }
+  const m = WEEKS[w-1][1], mc = document.querySelector(`.mcount[data-m="${m}"]`);
+  if(mc){ const all = WEEKS.filter(x=>x[1]===m); mc.textContent = `${all.filter(x=>st(x[0])==="done").length} of ${all.length} completed`; }
+  renderStats(); renderSide();
+}
+
+/* ---------- persistence ---------- */
+function setSync(t){ $("sync").textContent = t; }
+function saveLocal(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){} }
+function loadLocal(){ try{ const r = localStorage.getItem(STORE_KEY); if(r){ const p = JSON.parse(r); if(p && typeof p === "object"){ state.statuses = p.statuses || {}; state.start = p.start || ""; state.subs = p.subs || {}; } } }catch(e){} }
+
+function scheduleSave(){
+  saveLocal();
+  if(!ref){ setSync("Saved on this device"); return; }
+  dirty = true; setSync("Saving…");
+  clearTimeout(saveTimer); saveTimer = setTimeout(flush, 700);
+}
+async function flush(retried){
+  if(!ref || writing) return;
+  writing = true; dirty = false;
+  const payload = {statuses: {...state.statuses}, start: state.start || "", subs: JSON.parse(JSON.stringify(state.subs)), version: 2};
+  try{
+    await ref.set(payload);
+    setSync("All changes saved");
+  }catch(e){
+    const code = e && e.code;
+    if(code === "unavailable" && !retried){ writing = false; setTimeout(() => flush(true), 800 + Math.random()*700); return; }
+    if(code === "invalid_argument"){ readOnly = true; setSync("View only: you can't change this tracker"); renderList(); renderCont(); }
+    else setSync("Couldn't save to the cloud; saved on this device");
+  }
+  writing = false;
+  if(dirty) flush();
+}
+
+async function connect(){
+  if(!window.claude || typeof window.claude.use !== "function"){ setSync("Saved on this device"); return; }
+  try{ db = await window.claude.use("db"); }catch(e){ db = null; }
+  if(!db){ setSync("Saved on this device"); return; }
+  ref = db.doc("progress/main");
+  let first = true;
+  ref.onSnapshot(snap => {
+    if(dirty || writing) return;
+    if(snap.exists){
+      const d = snap.data() || {};
+      state.statuses = {...(d.statuses || {})}; state.start = d.start || ""; state.subs = JSON.parse(JSON.stringify(d.subs || {}));
+      saveLocal(); renderAll(); setSync("All changes saved");
+    } else if(first && (Object.keys(state.statuses).length || state.start)){
+      scheduleSave(); // move progress kept on this device into the tracker
+    } else if(first){ setSync("Ready"); }
+    first = false;
+  }, () => setSync("Live sync stopped; changes are saved on this device"));
+}
+
+/* ---------- events ---------- */
+document.addEventListener("change", e => {
+  const t = e.target;
+  if(t.classList.contains("status")){
+    setStatus(Number(t.dataset.w), t.value);
+  }
+  if(t.dataset.sub !== undefined){
+    const a = activeWeek(); if(!a) return;
+    state.subs[a] = {...(state.subs[a] || {})};
+    if(t.checked) state.subs[a][t.dataset.sub] = true; else delete state.subs[a][t.dataset.sub];
+    const list = subList(a), n = list.filter((_,i)=>state.subs[a][i]).length;
+    setStatus(a, n === list.length ? "done" : n > 0 ? "progress" : "not");
+  }
+});
+$("startDate").addEventListener("change", e => { state.start = e.target.value; renderAll(); scheduleSave(); });
+$("chips").addEventListener("click", e => {
+  const b = e.target.closest(".chip"); if(!b) return;
+  filter = b.dataset.f;
+  [...$("chips").children].forEach(c => c.setAttribute("aria-pressed", String(c === b)));
+  renderList();
+});
+$("monthFilter").innerHTML += MONTHS.map(([m,n]) => `<option value="${m}">Month ${m}: ${esc(n)}</option>`).join("");
+$("monthFilter").addEventListener("change", e => { monthF = e.target.value; renderList(); });
+let qt; $("search").addEventListener("input", e => { clearTimeout(qt); qt = setTimeout(() => { query = e.target.value.trim(); renderList(); }, 150); });
+$("strip").addEventListener("click", e => {
+  const c = e.target.closest(".cell"); if(!c) return;
+  const w = Number(c.dataset.w);
+  if(!$("wk"+w)){ filter="all"; monthF="all"; query=""; $("search").value=""; $("monthFilter").value="all";
+    [...$("chips").children].forEach(ch => ch.setAttribute("aria-pressed", String(ch.dataset.f==="all"))); renderList(); }
+  const row = $("wk"+w);
+  row.scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block:"center"});
+  row.classList.add("flash"); setTimeout(() => row.classList.remove("flash"), 1200);
+  const sel = row.querySelector("select"); if(sel) sel.focus({preventScroll:true});
+});
+document.addEventListener("click", e => {
+  if(e.target.id !== "finishWeek" || readOnly) return;
+  const a = activeWeek(); if(!a) return;
+  state.subs[a] = {}; subList(a).forEach((_,i) => state.subs[a][i] = true);
+  setStatus(a, "done");
+});
+$("reset").addEventListener("click", () => {
+  if(readOnly) return;
+  if(!confirm("Reset all 52 weeks to Not completed?")) return;
+  state.statuses = {}; state.subs = {}; renderAll(); scheduleSave();
+});
+
+loadLocal();
+renderAll();
+connect();
+</script>
+</body>
+</html>
